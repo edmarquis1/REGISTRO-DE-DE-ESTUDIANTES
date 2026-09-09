@@ -87,20 +87,6 @@
       </div>
     </section>
 
-    <!-- ============ DATOS EN LA NUBE ============ -->
-    <section class="bg-white rounded-2xl shadow p-4 sm:p-6">
-      <h2 class="text-base sm:text-lg font-semibold mb-1 text-slate-700">☁️ Datos en la nube</h2>
-      <p class="text-xs text-slate-400 mb-4">
-        Todos los registros se guardan directamente en Supabase. No necesitas exportar/importar archivos.
-      </p>
-      <div class="flex flex-col sm:flex-row gap-3">
-        <button id="btn-recargar"
-          class="flex-1 bg-slate-600 hover:bg-slate-700 active:scale-95 transition text-white font-medium px-4 py-2.5 rounded-lg text-sm shadow">
-          🔄 Recargar datos
-        </button>
-      </div>
-    </section>
-
     <p class="text-center text-xs text-slate-400 pb-6">
       Los datos son persistentes en la nube. Accesibles desde cualquier dispositivo.
     </p>
@@ -112,15 +98,15 @@
 
   <script>
     // ===================================================================
-    //  Todo el código se ejecuta dentro de una función para evitar
-    //  contaminar el ámbito global y posibles redeclaraciones.
+    //  Código encerrado en una función autoejecutable para evitar
+    //  conflictos de variables globales.
     // ===================================================================
     (function() {
-      // Configuración de Supabase (¡sin /rest/v1/ al final!)
+      // Configuración de Supabase (sin /rest/v1/ al final)
       const SUPABASE_URL = 'https://dqzxxwnkkoiefkwxtnnt.supabase.co';
       const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxenh4d25ra29pZWZrd3h0bm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5MDkwMTEsImV4cCI6MjEwNDQ4NTAxMX0.TnByaHcgrPTrKr2y5PhpFLNXlYlylOGOIP9B_t7s7tE';
 
-      // Usamos 'sb' en lugar de 'supabase' para evitar colisiones
+      // Cliente de Supabase (usamos 'sb' para evitar colisiones)
       const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // Referencias DOM
@@ -129,7 +115,6 @@
       const tablaBodyEl  = document.getElementById('tabla-body');
       const contadorEl   = document.getElementById('contador');
       const toastEl      = document.getElementById('toast');
-      const btnRecargar  = document.getElementById('btn-recargar');
 
       // Toast
       function mostrarToast(mensaje) {
@@ -201,7 +186,7 @@
         }
       }
 
-      // ---- Refrescar tabla ----
+      // ---- Refrescar tabla (se ejecuta después de cada operación) ----
       async function refrescarTabla() {
         const estudiantes = await cargarEstudiantes();
         tablaBodyEl.innerHTML = '';
@@ -235,19 +220,20 @@
           tablaBodyEl.appendChild(tr);
         }
 
+        // Asignar eventos a los botones de eliminar
         document.querySelectorAll('.btn-borrar').forEach(btn => {
           btn.addEventListener('click', async () => {
             const id = Number(btn.dataset.id);
             const ok = await eliminarEstudiante(id);
             if (ok) {
               mostrarToast('Registro eliminado');
-              refrescarTabla();
+              refrescarTabla(); // <-- Actualiza la tabla automáticamente
             }
           });
         });
       }
 
-      // ---- Eventos ----
+      // ---- Evento del formulario ----
       formEl.addEventListener('submit', async (e) => {
         e.preventDefault();
         const nombre  = document.getElementById('input-nombre').value.trim();
@@ -264,24 +250,19 @@
           formEl.reset();
           document.getElementById('input-nombre').focus();
           mostrarToast('Estudiante guardado ✔');
-          refrescarTabla();
+          refrescarTabla(); // <-- Actualiza la tabla automáticamente
         }
       });
 
-      btnRecargar.addEventListener('click', () => {
-        refrescarTabla();
-        mostrarToast('Datos recargados');
-      });
-
-      // ---- Inicio ----
+      // ---- Inicio de la aplicación ----
       async function iniciar() {
         dbStatusEl.textContent = 'Conectando a Supabase…';
         try {
-          // Prueba de conexión
+          // Consulta de prueba para verificar conexión
           const { data, error } = await sb.from('estudiantes').select('count', { count: 'exact', head: true });
           if (error) throw error;
           dbStatusEl.textContent = '✅ Conectado a Supabase';
-          await refrescarTabla();
+          await refrescarTabla(); // <-- Carga los datos al inicio
         } catch (err) {
           console.error(err);
           dbStatusEl.textContent = '⚠️ Error de conexión';
@@ -290,7 +271,7 @@
       }
 
       iniciar();
-    })(); // Fin del IIFE
+    })();
   </script>
 </body>
 </html>
