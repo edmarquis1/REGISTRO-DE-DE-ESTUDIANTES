@@ -114,8 +114,8 @@
     // ==============================================================
     //  CONFIGURACIÓN DE SUPABASE (reemplaza con tus credenciales)
     // ==============================================================
-    const SUPABASE_URL = 'https://tudominio.supabase.co';
-    const SUPABASE_ANON_KEY = 'tu-clave-anon-publica';
+    const SUPABASE_URL = 'https://dqzxxwnkkoiefkwxtnnt.supabase.co/rest/v1/';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxenh4d25ra29pZWZrd3h0bm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5MDkwMTEsImV4cCI6MjEwNDQ4NTAxMX0.TnByaHcgrPTrKr2y5PhpFLNXlYlylOGOIP9B_t7s7tE';
 
     // Inicializar cliente de Supabase
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
