@@ -111,202 +111,186 @@
        bg-slate-900 text-white text-sm px-4 py-2 rounded-full shadow-lg z-50"></div>
 
   <script>
-    // ==============================================================
-    //  CONFIGURACIÓN DE SUPABASE (¡cambia solo si es necesario!)
-    // ==============================================================
-    const SUPABASE_URL = 'https://dqzxxwnkkoiefkwxtnnt.supabase.co';   // <-- SIN /rest/v1/
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxenh4d25ra29pZWZrd3h0bm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5MDkwMTEsImV4cCI6MjEwNDQ4NTAxMX0.TnByaHcgrPTrKr2y5PhpFLNXlYlylOGOIP9B_t7s7tE';
+    // ===================================================================
+    //  Todo el código se ejecuta dentro de una función para evitar
+    //  contaminar el ámbito global y posibles redeclaraciones.
+    // ===================================================================
+    (function() {
+      // Configuración de Supabase (¡sin /rest/v1/ al final!)
+      const SUPABASE_URL = 'https://dqzxxwnkkoiefkwxtnnt.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxenh4d25ra29pZWZrd3h0bm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5MDkwMTEsImV4cCI6MjEwNDQ4NTAxMX0.TnByaHcgrPTrKr2y5PhpFLNXlYlylOGOIP9B_t7s7tE';
 
-    // ✅ Cambiamos el nombre de la variable a 'sb' para evitar conflictos
-    // También comprobamos que no esté ya definida (por si el script se ejecuta dos veces)
-    if (typeof sb === 'undefined') {
-      var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    }
+      // Usamos 'sb' en lugar de 'supabase' para evitar colisiones
+      const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ==============================================================
-    //  REFERENCIAS DOM
-    // ==============================================================
-    const dbStatusEl   = document.getElementById('db-status');
-    const formEl       = document.getElementById('form-estudiante');
-    const tablaBodyEl  = document.getElementById('tabla-body');
-    const contadorEl   = document.getElementById('contador');
-    const toastEl      = document.getElementById('toast');
-    const btnRecargar  = document.getElementById('btn-recargar');
+      // Referencias DOM
+      const dbStatusEl   = document.getElementById('db-status');
+      const formEl       = document.getElementById('form-estudiante');
+      const tablaBodyEl  = document.getElementById('tabla-body');
+      const contadorEl   = document.getElementById('contador');
+      const toastEl      = document.getElementById('toast');
+      const btnRecargar  = document.getElementById('btn-recargar');
 
-    // Utilidad: toast
-    function mostrarToast(mensaje) {
-      toastEl.textContent = mensaje;
-      toastEl.style.opacity = '1';
-      toastEl.style.transform = 'translate(-50%, -8px)';
-      clearTimeout(mostrarToast._t);
-      mostrarToast._t = setTimeout(() => {
-        toastEl.style.opacity = '0';
-        toastEl.style.transform = 'translate(-50%, 0)';
-      }, 2000);
-    }
-
-    // Escapar HTML
-    function escapeHtml(texto) {
-      const div = document.createElement('div');
-      div.textContent = texto;
-      return div.innerHTML;
-    }
-
-    // Color según nota
-    function colorNota(nota) {
-      if (nota >= 51) return 'bg-emerald-100 text-emerald-700';
-      if (nota >= 30) return 'bg-amber-100 text-amber-700';
-      return 'bg-red-100 text-red-700';
-    }
-
-    // ==============================================================
-    //  FUNCIONES CRUD CON SUPABASE (usando 'sb' en lugar de 'supabase')
-    // ==============================================================
-
-    async function cargarEstudiantes() {
-      try {
-        const { data, error } = await sb
-          .from('estudiantes')
-          .select('*')
-          .order('id', { ascending: false });
-
-        if (error) throw error;
-        return data || [];
-      } catch (err) {
-        console.error('Error al cargar:', err);
-        mostrarToast('Error al cargar los datos');
-        return [];
-      }
-    }
-
-    async function guardarEstudiante(nombre, materia, nota) {
-      try {
-        const { data, error } = await sb
-          .from('estudiantes')
-          .insert([{ nombre, materia, nota }])
-          .select();
-
-        if (error) throw error;
-        return data[0];
-      } catch (err) {
-        console.error('Error al insertar:', err);
-        mostrarToast('Error al guardar el estudiante');
-        return null;
-      }
-    }
-
-    async function eliminarEstudiante(id) {
-      try {
-        const { error } = await sb
-          .from('estudiantes')
-          .delete()
-          .eq('id', id);
-
-        if (error) throw error;
-        return true;
-      } catch (err) {
-        console.error('Error al eliminar:', err);
-        mostrarToast('Error al eliminar el registro');
-        return false;
-      }
-    }
-
-    // ==============================================================
-    //  REFRESCAR TABLA
-    // ==============================================================
-    async function refrescarTabla() {
-      const estudiantes = await cargarEstudiantes();
-
-      tablaBodyEl.innerHTML = '';
-
-      if (estudiantes.length === 0) {
-        tablaBodyEl.innerHTML = `
-          <tr><td colspan="5" class="px-3 py-6 text-center text-slate-400">
-            Aún no hay estudiantes registrados.
-          </td></tr>`;
-        contadorEl.textContent = '0 registros';
-        return;
+      // Toast
+      function mostrarToast(mensaje) {
+        toastEl.textContent = mensaje;
+        toastEl.style.opacity = '1';
+        toastEl.style.transform = 'translate(-50%, -8px)';
+        clearTimeout(mostrarToast._t);
+        mostrarToast._t = setTimeout(() => {
+          toastEl.style.opacity = '0';
+          toastEl.style.transform = 'translate(-50%, 0)';
+        }, 2000);
       }
 
-      contadorEl.textContent = `${estudiantes.length} registro${estudiantes.length === 1 ? '' : 's'}`;
-
-      for (const est of estudiantes) {
-        const tr = document.createElement('tr');
-        tr.className = 'hover:bg-slate-50';
-        tr.innerHTML = `
-          <td class="px-3 py-2 text-slate-400">${est.id}</td>
-          <td class="px-3 py-2 font-medium">${escapeHtml(est.nombre)}</td>
-          <td class="px-3 py-2">${escapeHtml(est.materia)}</td>
-          <td class="px-3 py-2">
-            <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${colorNota(est.nota)}">${est.nota}</span>
-          </td>
-          <td class="px-3 py-2 text-right">
-            <button data-id="${est.id}" class="btn-borrar text-red-500 hover:text-red-700 text-xs font-medium">
-              Eliminar
-            </button>
-          </td>`;
-        tablaBodyEl.appendChild(tr);
+      function escapeHtml(texto) {
+        const div = document.createElement('div');
+        div.textContent = texto;
+        return div.innerHTML;
       }
 
-      document.querySelectorAll('.btn-borrar').forEach(btn => {
-        btn.addEventListener('click', async () => {
-          const id = Number(btn.dataset.id);
-          const ok = await eliminarEstudiante(id);
-          if (ok) {
-            mostrarToast('Registro eliminado');
-            refrescarTabla();
-          }
+      function colorNota(nota) {
+        if (nota >= 51) return 'bg-emerald-100 text-emerald-700';
+        if (nota >= 30) return 'bg-amber-100 text-amber-700';
+        return 'bg-red-100 text-red-700';
+      }
+
+      // ---- CRUD ----
+      async function cargarEstudiantes() {
+        try {
+          const { data, error } = await sb
+            .from('estudiantes')
+            .select('*')
+            .order('id', { ascending: false });
+          if (error) throw error;
+          return data || [];
+        } catch (err) {
+          console.error('Error al cargar:', err);
+          mostrarToast('Error al cargar los datos');
+          return [];
+        }
+      }
+
+      async function guardarEstudiante(nombre, materia, nota) {
+        try {
+          const { data, error } = await sb
+            .from('estudiantes')
+            .insert([{ nombre, materia, nota }])
+            .select();
+          if (error) throw error;
+          return data[0];
+        } catch (err) {
+          console.error('Error al insertar:', err);
+          mostrarToast('Error al guardar el estudiante');
+          return null;
+        }
+      }
+
+      async function eliminarEstudiante(id) {
+        try {
+          const { error } = await sb
+            .from('estudiantes')
+            .delete()
+            .eq('id', id);
+          if (error) throw error;
+          return true;
+        } catch (err) {
+          console.error('Error al eliminar:', err);
+          mostrarToast('Error al eliminar el registro');
+          return false;
+        }
+      }
+
+      // ---- Refrescar tabla ----
+      async function refrescarTabla() {
+        const estudiantes = await cargarEstudiantes();
+        tablaBodyEl.innerHTML = '';
+
+        if (estudiantes.length === 0) {
+          tablaBodyEl.innerHTML = `
+            <tr><td colspan="5" class="px-3 py-6 text-center text-slate-400">
+              Aún no hay estudiantes registrados.
+            </td></tr>`;
+          contadorEl.textContent = '0 registros';
+          return;
+        }
+
+        contadorEl.textContent = `${estudiantes.length} registro${estudiantes.length === 1 ? '' : 's'}`;
+
+        for (const est of estudiantes) {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50';
+          tr.innerHTML = `
+            <td class="px-3 py-2 text-slate-400">${est.id}</td>
+            <td class="px-3 py-2 font-medium">${escapeHtml(est.nombre)}</td>
+            <td class="px-3 py-2">${escapeHtml(est.materia)}</td>
+            <td class="px-3 py-2">
+              <span class="px-2 py-0.5 rounded-full text-xs font-semibold ${colorNota(est.nota)}">${est.nota}</span>
+            </td>
+            <td class="px-3 py-2 text-right">
+              <button data-id="${est.id}" class="btn-borrar text-red-500 hover:text-red-700 text-xs font-medium">
+                Eliminar
+              </button>
+            </td>`;
+          tablaBodyEl.appendChild(tr);
+        }
+
+        document.querySelectorAll('.btn-borrar').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = Number(btn.dataset.id);
+            const ok = await eliminarEstudiante(id);
+            if (ok) {
+              mostrarToast('Registro eliminado');
+              refrescarTabla();
+            }
+          });
         });
+      }
+
+      // ---- Eventos ----
+      formEl.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const nombre  = document.getElementById('input-nombre').value.trim();
+        const materia = document.getElementById('input-materia').value.trim();
+        const nota    = Number(document.getElementById('input-nota').value);
+
+        if (!nombre || !materia || Number.isNaN(nota)) {
+          mostrarToast('Completa todos los campos correctamente.');
+          return;
+        }
+
+        const nuevo = await guardarEstudiante(nombre, materia, nota);
+        if (nuevo) {
+          formEl.reset();
+          document.getElementById('input-nombre').focus();
+          mostrarToast('Estudiante guardado ✔');
+          refrescarTabla();
+        }
       });
-    }
 
-    // ==============================================================
-    //  EVENTOS
-    // ==============================================================
-    formEl.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const nombre  = document.getElementById('input-nombre').value.trim();
-      const materia = document.getElementById('input-materia').value.trim();
-      const nota    = Number(document.getElementById('input-nota').value);
-
-      if (!nombre || !materia || Number.isNaN(nota)) {
-        mostrarToast('Completa todos los campos correctamente.');
-        return;
-      }
-
-      const nuevo = await guardarEstudiante(nombre, materia, nota);
-      if (nuevo) {
-        formEl.reset();
-        document.getElementById('input-nombre').focus();
-        mostrarToast('Estudiante guardado ✔');
+      btnRecargar.addEventListener('click', () => {
         refrescarTabla();
+        mostrarToast('Datos recargados');
+      });
+
+      // ---- Inicio ----
+      async function iniciar() {
+        dbStatusEl.textContent = 'Conectando a Supabase…';
+        try {
+          // Prueba de conexión
+          const { data, error } = await sb.from('estudiantes').select('count', { count: 'exact', head: true });
+          if (error) throw error;
+          dbStatusEl.textContent = '✅ Conectado a Supabase';
+          await refrescarTabla();
+        } catch (err) {
+          console.error(err);
+          dbStatusEl.textContent = '⚠️ Error de conexión';
+          mostrarToast('No se pudo conectar con Supabase. Revisa tu URL y clave.');
+        }
       }
-    });
 
-    btnRecargar.addEventListener('click', () => {
-      refrescarTabla();
-      mostrarToast('Datos recargados');
-    });
-
-    // ==============================================================
-    //  INICIO
-    // ==============================================================
-    async function iniciar() {
-      dbStatusEl.textContent = 'Conectando a Supabase…';
-      try {
-        const { data, error } = await sb.from('estudiantes').select('count', { count: 'exact', head: true });
-        if (error) throw error;
-        dbStatusEl.textContent = '✅ Conectado a Supabase';
-        await refrescarTabla();
-      } catch (err) {
-        console.error(err);
-        dbStatusEl.textContent = '⚠️ Error de conexión';
-        mostrarToast('No se pudo conectar con Supabase. Revisa tu URL y clave.');
-      }
-    }
-
-    iniciar();
+      iniciar();
+    })(); // Fin del IIFE
   </script>
 </body>
 </html>
