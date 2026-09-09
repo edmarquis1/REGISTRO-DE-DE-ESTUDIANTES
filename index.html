@@ -87,7 +87,7 @@
       </div>
     </section>
 
-    <!-- ============ SIN IMPORTAR/EXPORTAR (ya no hace falta) ============ -->
+    <!-- ============ DATOS EN LA NUBE ============ -->
     <section class="bg-white rounded-2xl shadow p-4 sm:p-6">
       <h2 class="text-base sm:text-lg font-semibold mb-1 text-slate-700">☁️ Datos en la nube</h2>
       <p class="text-xs text-slate-400 mb-4">
@@ -112,13 +112,16 @@
 
   <script>
     // ==============================================================
-    //  CONFIGURACIÓN DE SUPABASE (reemplaza con tus credenciales)
+    //  CONFIGURACIÓN DE SUPABASE (¡cambia solo si es necesario!)
     // ==============================================================
-    const SUPABASE_URL = 'https://dqzxxwnkkoiefkwxtnnt.supabase.co';  // 
+    const SUPABASE_URL = 'https://dqzxxwnkkoiefkwxtnnt.supabase.co';   // <-- SIN /rest/v1/
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxenh4d25ra29pZWZrd3h0bm50Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg5MDkwMTEsImV4cCI6MjEwNDQ4NTAxMX0.TnByaHcgrPTrKr2y5PhpFLNXlYlylOGOIP9B_t7s7tE';
 
-    // Inicializar cliente de Supabase
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ✅ Cambiamos el nombre de la variable a 'sb' para evitar conflictos
+    // También comprobamos que no esté ya definida (por si el script se ejecuta dos veces)
+    if (typeof sb === 'undefined') {
+      var sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    }
 
     // ==============================================================
     //  REFERENCIAS DOM
@@ -157,13 +160,12 @@
     }
 
     // ==============================================================
-    //  FUNCIONES CRUD CON SUPABASE
+    //  FUNCIONES CRUD CON SUPABASE (usando 'sb' en lugar de 'supabase')
     // ==============================================================
 
-    // Obtener todos los estudiantes (ordenados por id descendente)
     async function cargarEstudiantes() {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await sb
           .from('estudiantes')
           .select('*')
           .order('id', { ascending: false });
@@ -177,16 +179,15 @@
       }
     }
 
-    // Insertar un nuevo estudiante
     async function guardarEstudiante(nombre, materia, nota) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await sb
           .from('estudiantes')
           .insert([{ nombre, materia, nota }])
-          .select(); // Devuelve el registro insertado (con el id generado)
+          .select();
 
         if (error) throw error;
-        return data[0]; // el objeto insertado
+        return data[0];
       } catch (err) {
         console.error('Error al insertar:', err);
         mostrarToast('Error al guardar el estudiante');
@@ -194,10 +195,9 @@
       }
     }
 
-    // Eliminar un estudiante por id
     async function eliminarEstudiante(id) {
       try {
-        const { error } = await supabase
+        const { error } = await sb
           .from('estudiantes')
           .delete()
           .eq('id', id);
@@ -212,7 +212,7 @@
     }
 
     // ==============================================================
-    //  REFRESCAR TABLA (pinta los datos en el HTML)
+    //  REFRESCAR TABLA
     // ==============================================================
     async function refrescarTabla() {
       const estudiantes = await cargarEstudiantes();
@@ -248,7 +248,6 @@
         tablaBodyEl.appendChild(tr);
       }
 
-      // Enlazar eventos a los botones de eliminar
       document.querySelectorAll('.btn-borrar').forEach(btn => {
         btn.addEventListener('click', async () => {
           const id = Number(btn.dataset.id);
@@ -262,7 +261,7 @@
     }
 
     // ==============================================================
-    //  EVENTOS DEL FORMULARIO
+    //  EVENTOS
     // ==============================================================
     formEl.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -285,9 +284,6 @@
       }
     });
 
-    // ==============================================================
-    //  BOTÓN RECARGAR
-    // ==============================================================
     btnRecargar.addEventListener('click', () => {
       refrescarTabla();
       mostrarToast('Datos recargados');
@@ -299,8 +295,7 @@
     async function iniciar() {
       dbStatusEl.textContent = 'Conectando a Supabase…';
       try {
-        // Hacemos una consulta de prueba para verificar conexión
-        const { data, error } = await supabase.from('estudiantes').select('count', { count: 'exact', head: true });
+        const { data, error } = await sb.from('estudiantes').select('count', { count: 'exact', head: true });
         if (error) throw error;
         dbStatusEl.textContent = '✅ Conectado a Supabase';
         await refrescarTabla();
